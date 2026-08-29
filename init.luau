@@ -28,6 +28,31 @@ function AnimationModule.setNetworkProvider(provider: NetworkProvider)
 	NetworkBridge.setProvider(provider)
 end
 
+local ContentProvider = game:GetService("ContentProvider")
+
+--- Preloads animation instances or asset ID strings asynchronously using ContentProvider.
+-- @param items { Animation | string } - List of Animation objects or asset ID strings
+function AnimationModule.preloadTracks(items: { Animation | string })
+	local instancesToPreload: { Instance } = {}
+	for _, item in ipairs(items) do
+		if typeof(item) == "Instance" and item:IsA("Animation") then
+			table.insert(instancesToPreload, item)
+		elseif type(item) == "string" then
+			local anim = Instance.new("Animation")
+			anim.AnimationId = item
+			table.insert(instancesToPreload, anim)
+		end
+	end
+
+	if #instancesToPreload > 0 then
+		task.spawn(function()
+			pcall(function()
+				ContentProvider:PreloadAsync(instancesToPreload)
+			end)
+		end)
+	end
+end
+
 --- Helper to calculate 2D directional blend weights for 4-way locomotion (Forward, Backward, Left, Right).
 -- @param moveVector Vector2 - Normalized 2D movement vector (X = Strafe, Y = Forward/Backward)
 -- @return { [string]: number } - Map of animation weights
